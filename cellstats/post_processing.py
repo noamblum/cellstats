@@ -1,0 +1,84 @@
+from skimage.measure import regionprops
+import numpy as np
+import pandas as pd
+from typing import List, Union, Optional
+import warnings
+
+class FeatureExtractor:
+
+    ALL_FEATURES = ["length", "width", "area", "perimeter", "centroid", "aspect_ratio"]
+
+
+    def __init__(self, masks: Union[List[np.ndarray], np.ndarray], pixels_per_unit: Optional[float] = None) -> None:
+        if pixels_per_unit is None:
+            pixels_per_unit = 1
+            warnings.warn("pixels_per_unit not set, extracted features will be in pixels,"\
+                " are you sure this is what you want?")
+        self.__pixels_per_unit = pixels_per_unit
+        
+        # Multiple images
+        if isinstance(masks, list) or (isinstance(masks, np.ndarray) and len(masks.shape) == 3):
+            self.__regions: List[regionprops] = [regionprops(mask) for mask in masks]
+        # Single image
+        elif isinstance(masks, np.ndarray) and len(masks.shape) == 2:
+            self.__regions: List[regionprops] = [regionprops(masks)]
+        else:
+            if isinstance(masks, np.ndarray):
+                error_message = "masks should be a 2-d array (single image) or a 3-d array (multiple images)."\
+                    f"Got: {masks.shape}"
+                raise ValueError(error_message)
+            raise TypeError(f"Expected list or numpy array in masks. Got: {type(masks)}")
+
+        
+    def get_lengths(self) -> np.ndarray[float]:
+        # Get lengths in pixels
+        lengths = np.array([cell.axis_major_length for cells in self.__regions for cell in cells])
+        return lengths / self.__pixels_per_unit
+
+
+    def get_widths(self) -> np.ndarray[float]:
+        # Get widths in pixels
+        widths = np.array([cell.axis_minor_length for cells in self.__regions for cell in cells])
+        return widths / self.__pixels_per_unit
+
+    
+    def get_areas(self) -> np.ndarray[float]:
+        # Get areas in pixels
+        areas = np.array([cell.area for cells in self.__regions for cell in cells])
+        return areas / (self.__pixels_per_unit ** 2)
+
+
+    def get_perimeters(self) -> np.ndarray[float]:
+        # Get areas in pixels
+        perimeters = np.array([cell.perimeter for cells in self.__regions for cell in cells])
+        return perimeters / (self.__pixels_per_unit ** 2)
+
+    
+    def get_centroids(self) -> np.ndarray[float]:
+        return np.array([np.array(cell.centroid) for cells in self.__regions for cell in cells])
+
+    
+    def get_aspect_ratios(self) -> np.ndarray[float]:
+        return self.get_lengths() / self.get_widths()
+
+    
+    def get_features(self, features: Optional[List[str]]) -> pd.DataFrame:
+        if features is None: features = FeatureExtractor.ALL_FEATURES
+        res = {}
+        
+        if "length" in features:
+            res["length"] = self.get_lengths()
+        if "width" in features:
+            res["width"] = self.get_widths()
+        if "area" in features:
+            res["area"] = self.get_areas()
+        if "centroid" in features:
+            centroids = self.get_centroids().T
+            res["centroidX"] = centroids[0]
+            res["centroidY"] = centroids[1]
+        if "perimeter" in features:
+            res["perimeter"] = self.get_perimeters()
+        if "aspect_ratio" in features:
+            res["aspect_ratio"] = self.get_aspect_ratios()
+        
+        return pd.DataFrame(res)
