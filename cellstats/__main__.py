@@ -1,13 +1,13 @@
 import argparse
 import os
 
+
 def main():
     parser = argparse.ArgumentParser(description="Microscopy images processing.")
     subparsers = parser.add_subparsers(help="Functions", dest="command")
 
     
-    parser_predict = subparsers.add_parser("predict", help="Predict features from an image or batch."\
-        f" Currently available features are {post_processing.FeatureExtractor.ALL_FEATURES}")
+    parser_predict = subparsers.add_parser("predict", help="Predict features from an image or batch.")
     parser_predict.add_argument('input_file', help='Input file or directory', type=str)
     parser_predict.add_argument('output_file', help='Path to output file which will contain features', type=str)
     parser_predict.add_argument('--model', help='Name of model form .cellstats folder or path to one', type=str)
