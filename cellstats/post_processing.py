@@ -30,35 +30,35 @@ class FeatureExtractor:
             raise TypeError(f"Expected list or numpy array in masks. Got: {type(masks)}")
 
         
-    def get_lengths(self) -> np.ndarray[float]:
+    def get_lengths(self) -> np.ndarray:
         # Get lengths in pixels
         lengths = np.array([cell.axis_major_length for cells in self.__regions for cell in cells])
         return lengths / self.__pixels_per_unit
 
 
-    def get_widths(self) -> np.ndarray[float]:
+    def get_widths(self) -> np.ndarray:
         # Get widths in pixels
         widths = np.array([cell.axis_minor_length for cells in self.__regions for cell in cells])
         return widths / self.__pixels_per_unit
 
     
-    def get_areas(self) -> np.ndarray[float]:
+    def get_areas(self) -> np.ndarray:
         # Get areas in pixels
         areas = np.array([cell.area for cells in self.__regions for cell in cells])
         return areas / (self.__pixels_per_unit ** 2)
 
 
-    def get_perimeters(self) -> np.ndarray[float]:
+    def get_perimeters(self) -> np.ndarray:
         # Get areas in pixels
         perimeters = np.array([cell.perimeter for cells in self.__regions for cell in cells])
         return perimeters / (self.__pixels_per_unit ** 2)
 
     
-    def get_centroids(self) -> np.ndarray[float]:
+    def get_centroids(self) -> np.ndarray:
         return np.array([np.array(cell.centroid) for cells in self.__regions for cell in cells])
 
     
-    def get_aspect_ratios(self) -> np.ndarray[float]:
+    def get_aspect_ratios(self) -> np.ndarray:
         return self.get_lengths() / self.get_widths()
 
     
