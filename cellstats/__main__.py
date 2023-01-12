@@ -1,7 +1,5 @@
 import argparse
 import os
-import cellstats.models as models
-import cellstats.post_processing as post_processing
 
 def main():
     parser = argparse.ArgumentParser(description="Microscopy images processing.")
@@ -48,6 +46,7 @@ def main():
     
 
     if args.command == "model":
+        import cellstats.models as models
         if args.model_command == "add":
             models.add_model(args.model_file, args.name, args.overwrite)
         elif args.model_command == "rename":
@@ -56,6 +55,8 @@ def main():
             models.rename_model(args.name)
 
     elif args.command == "predict":
+        import cellstats.models as models
+        import cellstats.post_processing as post_processing
         masks = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]])
         fe = post_processing.FeatureExtractor(masks, 1) # Placeholder for scale detection
         df = fe.get_features(args.features)
