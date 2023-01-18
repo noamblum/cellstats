@@ -30,6 +30,8 @@ def main():
                                     type=int, default=0)
     parser_predict.add_argument("--features", required=False, nargs='+', default=None,
                                 help="List of features to predict. By default predicts all available features.")
+    parser_predict.add_argument("-v" ,"--verbose", required=False, action="store_true",
+                            help="Verbose output")
             
 
 
@@ -92,7 +94,8 @@ def main():
     elif args.command == "predict":
         import cellstats.models as models
         import cellstats.post_processing as post_processing
-        masks = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]])
+        masks = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]],
+                                    args.verbose)
         fe = post_processing.FeatureExtractor(masks, 1) # Placeholder for scale detection
         df = fe.get_features(args.features)
         df.to_csv(args.output_file, index=False)

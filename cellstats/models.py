@@ -1,5 +1,3 @@
-from cellpose import io
-from cellpose import models as cpmodels
 import os
 from typing import Optional
 import shutil
@@ -24,7 +22,9 @@ def __get_model_dir(environment: bool):
     return pathlib.Path(_MODEL_DIR_ENV) if environment else _MODEL_DIR_DEFAULT
 
 
-def predict_masks(input_path, model_path, use_gpu, channels):
+def predict_masks(input_path, model_path, use_gpu, channels, verbose):
+    from cellpose import io
+    from cellpose import models as cpmodels
     if not os.path.isfile(model_path):
         model_path_local = os.fspath(__get_model_dir(False).joinpath(model_path))
         model_path_env = os.fspath(__get_model_dir(True).joinpath(model_path))
@@ -43,6 +43,10 @@ def predict_masks(input_path, model_path, use_gpu, channels):
                                                                 if any(im.endswith(e) for e in IMAGE_EXTENSIONS)]
     elif os.path.isfile(input_path):
         input_images = [io.imread(input_path)]
+
+    if verbose:
+        from cellpose.io import logger_setup
+        logger_setup()
 
     model = cpmodels.CellposeModel(gpu=use_gpu, pretrained_model=model_path)
 
