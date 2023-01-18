@@ -1,6 +1,6 @@
 from setuptools import setup
 
-install_deps = ['cellpose', 'pandas', 'numpy', 'scipy', 'scikit-image']
+install_deps = ['cellpose', 'pandas', 'numpy', 'scipy', 'scikit-image', 'pillow']
 
 setup(name='cellstats',
       version='0.1',

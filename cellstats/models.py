@@ -22,7 +22,7 @@ def __get_model_dir(environment: bool):
     return pathlib.Path(_MODEL_DIR_ENV) if environment else _MODEL_DIR_DEFAULT
 
 
-def predict_masks(input_path, model_path, use_gpu, channels, verbose):
+def predict_masks(input_path, model_path, use_gpu, channels, verbose=False, output_path=None):
     from cellpose import io
     from cellpose import models as cpmodels
     if not os.path.isfile(model_path):
@@ -39,9 +39,11 @@ def predict_masks(input_path, model_path, use_gpu, channels, verbose):
             model_path = model_path_env
 
     if os.path.isdir(input_path):
-        input_images = [io.imread(os.path.join(input_path, im)) for im in os.listdir(input_path)
-                                                                if any(im.endswith(e) for e in IMAGE_EXTENSIONS)]
+        input_image_paths = [im for im in os.listdir(input_path) if any(im.endswith(e) for e in IMAGE_EXTENSIONS)]
+        input_images = [io.imread(os.path.join(input_path, im)) for im in input_image_paths]
+        
     elif os.path.isfile(input_path):
+        input_image_paths = [input_path]
         input_images = [io.imread(input_path)]
 
     if verbose:
@@ -52,6 +54,22 @@ def predict_masks(input_path, model_path, use_gpu, channels, verbose):
 
     masks, _, _ = model.eval(input_images, channels=channels)
 
+    if output_path is not None:
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        from cellpose.utils import masks_to_outlines
+        from PIL import Image
+        if verbose:
+            print(f"Saving masks to {output_path}. This might take a while...")
+        for i in range(len(input_images)):
+            image = input_images[i].copy()
+            image_name = os.path.splitext(os.path.basename(input_image_paths[i]))[0]
+            outline = masks_to_outlines(masks[i])
+            image[outline > 0] = 255, 0, 0 # Make outlines red
+
+            Image.fromarray(image).save(f"{os.path.join(output_path, image_name)}_outlines.png")
+            if verbose:
+                print(f"Saved outline for {image_name}")
     return masks
 
 
