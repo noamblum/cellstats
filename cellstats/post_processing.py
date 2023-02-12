@@ -9,12 +9,14 @@ class FeatureExtractor:
     ALL_FEATURES = ["length", "width", "area", "perimeter", "centroid", "aspect_ratio"]
 
 
-    def __init__(self, masks: Union[List[np.ndarray], np.ndarray], pixels_per_unit: Optional[float] = None) -> None:
-        if pixels_per_unit is None:
-            pixels_per_unit = 1
-            warnings.warn("pixels_per_unit not set, extracted features will be in pixels,"\
+    def __init__(self, masks: Union[List[np.ndarray], np.ndarray], scales: Optional[np.ndarray] = None, unit=10e-6) -> None:
+        
+        if scales is None:
+            warnings.warn("scales not set, extracted features will be in pixels,"\
                 " are you sure this is what you want?")
-        self.__pixels_per_unit = pixels_per_unit
+            self.__scales = 1
+        else:
+            self.__scales = scales / unit
         
         # Multiple images
         if isinstance(masks, list) or (isinstance(masks, np.ndarray) and len(masks.shape) == 3):
@@ -32,26 +34,26 @@ class FeatureExtractor:
         
     def get_lengths(self) -> np.ndarray:
         # Get lengths in pixels
-        lengths = np.array([cell.axis_major_length for cells in self.__regions for cell in cells])
-        return lengths / self.__pixels_per_unit
+        lengths = np.array([[cell.axis_major_length for cell in cells] for cells in self.__regions ])
+        return (lengths * self.__scales).flatten()
 
 
     def get_widths(self) -> np.ndarray:
         # Get widths in pixels
         widths = np.array([cell.axis_minor_length for cells in self.__regions for cell in cells])
-        return widths / self.__pixels_per_unit
+        return widths * self.__scales
 
     
     def get_areas(self) -> np.ndarray:
         # Get areas in pixels
         areas = np.array([cell.area for cells in self.__regions for cell in cells])
-        return areas / (self.__pixels_per_unit ** 2)
+        return areas * (self.__scales ** 2)
 
 
     def get_perimeters(self) -> np.ndarray:
         # Get areas in pixels
         perimeters = np.array([cell.perimeter for cells in self.__regions for cell in cells])
-        return perimeters / (self.__pixels_per_unit ** 2)
+        return perimeters * self.__scales
 
     
     def get_centroids(self) -> np.ndarray:
