@@ -33,27 +33,27 @@ class FeatureExtractor:
 
         
     def get_lengths(self) -> np.ndarray:
-        # Get lengths in pixels
-        lengths = np.array([[cell.axis_major_length for cell in cells] for cells in self.__regions ])
-        return (lengths * self.__scales).flatten()
+        lengths = np.array([np.array([cell.axis_major_length for cell in cells])
+                                        for cells in self.__regions], dtype=object)
+        return np.concatenate(lengths * self.__scales).ravel()
 
 
     def get_widths(self) -> np.ndarray:
-        # Get widths in pixels
-        widths = np.array([cell.axis_minor_length for cells in self.__regions for cell in cells])
-        return widths * self.__scales
+        widths = np.array([np.array([cell.axis_minor_length for cell in cells])
+                                        for cells in self.__regions], dtype=object)
+        return np.concatenate(widths * self.__scales).ravel()
 
     
     def get_areas(self) -> np.ndarray:
-        # Get areas in pixels
-        areas = np.array([cell.area for cells in self.__regions for cell in cells])
-        return areas * (self.__scales ** 2)
+        areas = np.array([np.array([cell.area for cell in cells])
+                                        for cells in self.__regions], dtype=object)
+        return np.concatenate(areas * (self.__scales ** 2)).ravel()
 
 
     def get_perimeters(self) -> np.ndarray:
-        # Get areas in pixels
-        perimeters = np.array([cell.perimeter for cells in self.__regions for cell in cells])
-        return perimeters * self.__scales
+        perimeters = np.array([np.array([cell.perimeter for cell in cells])
+                                        for cells in self.__regions], dtype=object)
+        return np.concatenate(perimeters * self.__scales).ravel()
 
     
     def get_centroids(self) -> np.ndarray:

@@ -70,7 +70,7 @@ def main():
     
 
     if args.command == "model":
-        from . import models
+        from cellstats import models
         if args.model_command == "add":
             models.add_model(args.model_file, args.name, args.overwrite, args.env)
         elif args.model_command == "rename":
@@ -94,15 +94,15 @@ def main():
             print(f"Environment:{env_models}\nLocal:{local_models}")
 
     elif args.command == "predict":
-        from . import models
-        from . import post_processing
+        from cellstats import models
+        from cellstats import post_processing
         if args.save_outlines:
             outdir = os.path.join(os.path.dirname(os.path.abspath(args.output_file)), "segmentation_outlines")
         else:
             outdir = None
         masks = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]],
                                     args.verbose, outdir)
-        fe = post_processing.FeatureExtractor(masks, 1) # Placeholder for scale detection
+        fe = post_processing.FeatureExtractor(masks, None) # Placeholder for scale detection
         df = fe.get_features(args.features)
         df.to_csv(args.output_file, index=False)
 

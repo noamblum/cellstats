@@ -2,7 +2,7 @@ import os
 from typing import Optional
 import shutil
 import pathlib
-from . import io
+from cellstats import io
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 _MODEL_DIR_ENV = os.environ.get("CELLSTATS_ENVIRONMENT_MODEL_REPOSITORY")
