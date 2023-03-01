@@ -100,9 +100,9 @@ def main():
             outdir = os.path.join(os.path.dirname(os.path.abspath(args.output_file)), "segmentation_outlines")
         else:
             outdir = None
-        masks = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]],
-                                    args.verbose, outdir)
-        fe = post_processing.FeatureExtractor(masks, None) # Placeholder for scale detection
+        masks, image_names = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]],
+                                    args.verbose, outdir, return_image_names=True)
+        fe = post_processing.FeatureExtractor(masks, files=image_names, scales=None)
         df = fe.get_features(args.features)
         df.to_csv(args.output_file, index=False)
 

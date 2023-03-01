@@ -9,7 +9,8 @@ class FeatureExtractor:
     ALL_FEATURES = ["length", "width", "area", "perimeter", "centroid", "aspect_ratio"]
 
 
-    def __init__(self, masks: Union[List[np.ndarray], np.ndarray], scales: Optional[np.ndarray] = None, unit=10e-6) -> None:
+    def __init__(self, masks: Union[List[np.ndarray], np.ndarray], files: List[str] = None,
+                                scales: Optional[np.ndarray] = None, unit=10e-6) -> None:
         
         if scales is None:
             warnings.warn("scales not set, extracted features will be in pixels,"\
@@ -18,6 +19,11 @@ class FeatureExtractor:
         else:
             self.__scales = scales / unit
         
+        if isinstance(files, list) or files is None:
+            self.__files: List[str] = files
+        else:
+            self.__files: List[str] = [files]
+
         # Multiple images
         if isinstance(masks, list) or (isinstance(masks, np.ndarray) and len(masks.shape) == 3):
             self.__regions: List[regionprops] = [regionprops(mask) for mask in masks]
@@ -67,6 +73,9 @@ class FeatureExtractor:
     def get_features(self, features: Optional[List[str]]) -> pd.DataFrame:
         if features is None: features = FeatureExtractor.ALL_FEATURES
         res = {}
+
+        if self.__files is not None:
+            res["source"] = [self.__files[i] for i, cells in enumerate(self.__regions) for _ in cells]
         
         if "length" in features:
             res["length"] = self.get_lengths()
