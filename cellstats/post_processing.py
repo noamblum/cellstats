@@ -10,9 +10,9 @@ class FeatureExtractor:
 
 
     def __init__(self, masks: Union[List[np.ndarray], np.ndarray], files: List[str] = None,
-                                scales: Optional[np.ndarray] = None, unit=10e-6) -> None:
+                                scales: Optional[np.ndarray] = None, unit=1e-6) -> None:
         
-        if scales is None:
+        if scales is None or len(scales) == 0:
             warnings.warn("scales not set, extracted features will be in pixels,"\
                 " are you sure this is what you want?")
             self.__scales = 1

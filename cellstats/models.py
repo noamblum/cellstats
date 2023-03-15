@@ -23,7 +23,7 @@ def __get_model_dir(environment: bool):
     return pathlib.Path(_MODEL_DIR_ENV) if environment else _MODEL_DIR_DEFAULT
 
 
-def predict_masks(input_path, model_path, use_gpu, channels, verbose=False, output_path=None, return_image_names=False):
+def predict_masks(input_path, model_path, use_gpu, channel, verbose=False, output_path=None, return_image_names=False):
     from cellpose import models as cpmodels
     if not os.path.isfile(model_path):
         model_path_local = os.fspath(__get_model_dir(False).joinpath(model_path))
@@ -38,7 +38,7 @@ def predict_masks(input_path, model_path, use_gpu, channels, verbose=False, outp
         else:
             model_path = model_path_env
 
-    input_images, input_image_names = io.load_images(input_path)
+    input_images, input_image_names = io.load_images(input_path, channel)
 
     if verbose:
         from cellpose.io import logger_setup
@@ -46,24 +46,10 @@ def predict_masks(input_path, model_path, use_gpu, channels, verbose=False, outp
 
     model = cpmodels.CellposeModel(gpu=use_gpu, pretrained_model=model_path)
 
-    masks, _, _ = model.eval(input_images, channels=channels)
+    masks, _, _ = model.eval(input_images, channels=[0,0])
 
     if output_path is not None:
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-        from cellpose.utils import masks_to_outlines
-        from PIL import Image
-        if verbose:
-            print(f"Saving masks to {output_path}. This might take a while...")
-        for i in range(len(input_images)):
-            image = input_images[i].copy()
-            image_name = os.path.splitext(os.path.basename(input_image_names[i]))[0]
-            outline = masks_to_outlines(masks[i])
-            image[outline > 0] = 255, 0, 0 # Make outlines red
-
-            Image.fromarray(image).save(f"{os.path.join(output_path, image_name)}_outlines.png")
-            if verbose:
-                print(f"Saved outline for {image_name}")
+        io.save_image_outlines(input_path, output_path, masks, channel, verbose=verbose)
     if return_image_names:
         return masks, input_image_names
     return masks

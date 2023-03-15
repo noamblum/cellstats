@@ -22,12 +22,12 @@ def main():
     parser_predict.add_argument('input_file', help='Input file or directory', type=str)
     parser_predict.add_argument('output_file', help='Path to output file which will contain features', type=str)
     parser_predict.add_argument('--model', help='Name of model form .cellstats folder or path to one', type=str)
+    parser_predict.add_argument('--channel', required=False, help='Channel to segment. If using CZI files, can be a'\
+                                ' string specifying channel name or an integer specifying channel index. '
+                                'For regular image files: 0 - grayscale, 1 - red, 2 - green, 3 - blue.'
+                                ' In all cases default is 0.', default=0)
     parser_predict.add_argument("--gpu", required=False, action="store_true",
                             help="Use gpu acceleration if available")
-    parser_predict.add_argument('--channel', required=False, help='Channel to segment, default is 2 for green.',
-                                    type=int, default=2)
-    parser_predict.add_argument('--channel2', required=False, help='Second channel to segment, default is 0 for None.',
-                                    type=int, default=0)
     parser_predict.add_argument("--features", required=False, nargs='+', default=None,
                                 help="List of features to predict. By default predicts all available features.")
     parser_predict.add_argument("--save_outlines", required=False, action="store_true",
@@ -96,13 +96,17 @@ def main():
     elif args.command == "predict":
         from cellstats import models
         from cellstats import post_processing
+        from cellstats import io
         if args.save_outlines:
             outdir = os.path.join(os.path.dirname(os.path.abspath(args.output_file)), "segmentation_outlines")
         else:
             outdir = None
-        masks, image_names = models.predict_masks(args.input_file, args.model, args.gpu, [[args.channel, args.channel2]],
-                                    args.verbose, outdir, return_image_names=True)
-        fe = post_processing.FeatureExtractor(masks, files=image_names, scales=None)
+        channel = int(args.channel) if args.channel.isdigit() else args.channel
+        masks, image_names = models.predict_masks(args.input_file, args.model, args.gpu, channel,
+                                    args.verbose, None, return_image_names=True)
+        if outdir is not None:
+            io.save_image_outlines(args.input_file, outdir, masks, channel, verbose=True)
+        fe = post_processing.FeatureExtractor(masks, files=image_names, scales=io.load_image_scales(args.input_file))
         df = fe.get_features(args.features)
         df.to_csv(args.output_file, index=False)
 
