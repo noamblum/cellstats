@@ -11,18 +11,18 @@ from skimage import color
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
-def load_images(input_path: str, channel=0, rgb=False):
+def load_images(input_path: str, channel=0, rgb=False, czi_all_channels=False):
     if os.path.isdir(input_path):
         image_names = []
         images = []
         for im in os.listdir(input_path):
-            if any(im.endswith(e) for e in IMAGE_EXTENSIONS) or im.endswith(".czi"):
-                images.append(__load_image(os.path.join(input_path, im), channel, rgb))
+            if is_image_file(im) or im.endswith(".czi"):
+                images.append(load_image(os.path.join(input_path, im), channel, rgb))
                 image_names.append(im)
 
     elif os.path.isfile(input_path):
         image_names = [input_path]
-        images = [__load_image(input_path, channel, rgb)]
+        images = [load_image(input_path, channel, rgb, czi_all_channels)]
 
     else:
         raise FileNotFoundError(f"Could not find {input_path}")
@@ -91,7 +91,7 @@ def save_image_outlines(input_path: str, output_path: str, masks: np.ndarray, ch
             print(f"Saved outline for {image_name}")
 
 
-def __load_image(img_path: str, channel: int, rgb=False):
+def load_image(img_path: str, channel: int, rgb=False, czi_all_channels=False):
     if any(img_path.endswith(e) for e in IMAGE_EXTENSIONS):
         img = cpio.imread(img_path)
         if rgb:
@@ -101,12 +101,22 @@ def __load_image(img_path: str, channel: int, rgb=False):
         return img[:,:,channel - 1]
     if img_path.endswith(".czi"):
         img = AICSImage(img_path)
-        metadata = load_metadata(img_path, ".tif_metadata.xml")
-        channels_info = metadata[0].find(".//Information/Image/Dimensions/Channels")
+        if (czi_all_channels):
+            return img.get_image_data("YXC")
         if isinstance(channel, str):
-            c = channels_info.find(f'.//Channel[@Name="{channel}"]')
-            channels_info = list(channels_info)
-            if c not in channels_info:
-                raise ValueError(f"{channel} is not a channel in {img_path}")
-            channel = channels_info.index(c)
-        return img.get_image_data("YX", c=channel)
+            channel = get_czi_channel_index(img_path, channel)
+        return img.get_image_data("YX", C=channel)
+    
+
+def get_czi_channel_index(czi_path, channel):
+    metadata = load_metadata(czi_path, ".tif_metadata.xml")
+    channels_info = metadata[0].find(".//Information/Image/Dimensions/Channels")
+    c = channels_info.find(f'.//Channel[@Name="{channel}"]')
+    channels_info = list(channels_info)
+    if c not in channels_info:
+        raise ValueError(f"{channel} is not a channel in {czi_path}")
+    return channels_info.index(c)
+
+
+def is_image_file(img_path):
+    return any(img_path.endswith(e) for e in IMAGE_EXTENSIONS)

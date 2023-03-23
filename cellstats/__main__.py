@@ -22,7 +22,7 @@ def main():
     parser_predict.add_argument('input_file', help='Input file or directory', type=str)
     parser_predict.add_argument('output_file', help='Path to output file which will contain features', type=str)
     parser_predict.add_argument('--model', help='Name of model form .cellstats folder or path to one', type=str)
-    parser_predict.add_argument('--channel', required=False, help='Channel to segment. If using CZI files, can be a'\
+    parser_predict.add_argument('-c', '--channel', required=False, help='Channel to segment. If using CZI files, can be a'\
                                 ' string specifying channel name or an integer specifying channel index. '
                                 'For regular image files: 0 - grayscale, 1 - red, 2 - green, 3 - blue.'
                                 ' In all cases default is 0.', default=0)
@@ -34,6 +34,8 @@ def main():
                             help="Save the predicted masks in a folder alongside the output file.")
     parser_predict.add_argument("-v" ,"--verbose", required=False, action="store_true",
                             help="Verbose output")
+    parser_predict.add_argument("-i", "--intensity_channel", required=False, action='append',
+                                help="Channels to analyze intensity on")
             
 
 
@@ -107,8 +109,14 @@ def main():
         if outdir is not None:
             io.save_image_outlines(args.input_file, outdir, masks, channel, verbose=True)
         fe = post_processing.FeatureExtractor(masks, files=image_names, scales=io.load_image_scales(args.input_file))
-        df = fe.get_features(args.features)
+        df = fe.get_geometrical_features(args.features)
         df.to_csv(args.output_file, index=False)
+        if args.intensity_channel is not None:
+            for ic in args.intensity_channel:
+                if ic.isdigit():
+                    ic = int(ic)
+                out_file_name = f"{os.path.splitext(args.output_file)[0]}_intensity_{ic}.csv"
+                fe.get_intensity_features(ic, None).to_csv(out_file_name, index=False)
 
 
 if __name__ == "__main__":
