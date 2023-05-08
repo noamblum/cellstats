@@ -5,6 +5,7 @@ from typing import List, Union, Optional
 import warnings
 from cellstats import io
 from skimage import color
+import cv2 as cv
 
 class FeatureExtractor:
 
@@ -103,6 +104,24 @@ class FeatureExtractor:
         return distances * scales_vec
 
 
+    def get_fraction_filled(self, channel) -> np.ndarray:
+        channels = self.__parse_channel(channel)
+        data = [cell.image_intensity for cells in self.__regions for cell in cells]
+        data = [d[:,:,channels[i]] for i, d in enumerate(data)]
+
+        def calc_threshold(img):
+            blurred = cv.GaussianBlur(img, (5,5), 0.7)
+            (T, _) = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU)
+            return T
+        
+        th = np.array(list(map(calc_threshold, data))).mean()
+
+        def calc_percentage(img):
+            blurred = cv.GaussianBlur(img, (5,5), 0.7)
+            (_, thresh) = cv.threshold(blurred, th, 255, cv.THRESH_BINARY)
+            return thresh[thresh > 0].size / thresh.size
+        return np.array(list(map(calc_percentage, data)))
+
     
     def get_geometrical_features(self, features: Optional[List[str]]) -> pd.DataFrame:
         if features is None: features = FeatureExtractor.ALL_GEOMETRICAL_FEATURES
@@ -136,5 +155,6 @@ class FeatureExtractor:
         res["center_of_mass_X"] = coms[0]
         res["center_of_mass_Y"] = coms[1]
         res["d_com_centroid"] = self.get_delta_com_centroids(channel)
+        res["fraction_filled"] = self.get_fraction_filled(channel)
         return pd.DataFrame(res)
 
